@@ -36,9 +36,11 @@ export type Database = {
         Row: {
           business_name: string
           category_id: string | null
+          contact_count: number | null
           created_at: string
           email: string | null
           id: string
+          last_contacted_at: string | null
           link: string | null
           mobile_number: string | null
           notes: string | null
@@ -48,9 +50,11 @@ export type Database = {
         Insert: {
           business_name: string
           category_id?: string | null
+          contact_count?: number | null
           created_at?: string
           email?: string | null
           id?: string
+          last_contacted_at?: string | null
           link?: string | null
           mobile_number?: string | null
           notes?: string | null
@@ -60,9 +64,11 @@ export type Database = {
         Update: {
           business_name?: string
           category_id?: string | null
+          contact_count?: number | null
           created_at?: string
           email?: string | null
           id?: string
+          last_contacted_at?: string | null
           link?: string | null
           mobile_number?: string | null
           notes?: string | null

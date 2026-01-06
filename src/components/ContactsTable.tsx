@@ -8,7 +8,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, FileText, Trash2, ExternalLink, Mail, Phone } from "lucide-react";
+import { Plus, FileText, Trash2, ExternalLink, Mail, Phone, Clock } from "lucide-react";
+import { format } from "date-fns";
 import { toast } from "sonner";
 
 interface EmailTemplate {
@@ -21,6 +22,7 @@ interface ColumnWidths {
   email: number;
   mobile: number;
   status: number;
+  last_contacted: number;
   link: number;
   notes: number;
 }
@@ -30,6 +32,7 @@ const DEFAULT_WIDTHS: ColumnWidths = {
   email: 180,
   mobile: 140,
   status: 120,
+  last_contacted: 160,
   link: 180,
   notes: 250,
 };
@@ -45,6 +48,8 @@ interface Contact {
   status: string;
   link?: string | null;
   notes: string | null;
+  last_contacted_at: string | null;
+  contact_count: number;
   created_at: string;
   updated_at: string;
 }
@@ -209,15 +214,56 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
     }
   };
 
-  const openGmailCompose = (email: string) => {
+  const openGmailCompose = async (email: string, contactId: string) => {
     if (!emailTemplate) {
       toast.error("Email template not loaded");
       return;
     }
+    
+    // Track the contact
+    await trackContact(contactId);
+    
     const subject = encodeURIComponent(emailTemplate.subject);
     const body = encodeURIComponent(emailTemplate.body);
     const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${subject}&body=${body}`;
     window.open(gmailUrl, "_blank", "noopener,noreferrer");
+  };
+
+  const handlePhoneCall = async (phone: string, contactId: string) => {
+    await trackContact(contactId);
+    window.open(`tel:${phone}`, "_self");
+  };
+
+  const trackContact = async (contactId: string) => {
+    const contact = contacts.find(c => c.id === contactId);
+    if (!contact) return;
+
+    const now = new Date().toISOString();
+    const newCount = (contact.contact_count || 0) + 1;
+
+    const { error } = await supabase
+      .from("contacts")
+      .update({ 
+        last_contacted_at: now, 
+        contact_count: newCount,
+        updated_at: now 
+      })
+      .eq("id", contactId);
+
+    if (!error) {
+      setContacts(
+        contacts.map((c) =>
+          c.id === contactId 
+            ? { ...c, last_contacted_at: now, contact_count: newCount, updated_at: now } 
+            : c
+        )
+      );
+    }
+  };
+
+  const formatLastContacted = (date: string | null) => {
+    if (!date) return null;
+    return format(new Date(date), "MMM d, yyyy h:mm a");
   };
 
   const statusColors: Record<string, string> = {
@@ -307,6 +353,13 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
         >
           Status
           <ResizeHandle columnKey="status" />
+        </div>
+        <div
+          className="relative px-3 py-2 border-r border-border font-medium shrink-0"
+          style={{ width: columnWidths.last_contacted }}
+        >
+          Last Contacted
+          <ResizeHandle columnKey="last_contacted" />
         </div>
         <div
           className="relative px-3 py-2 font-medium flex-1 min-w-[150px]"
@@ -436,7 +489,7 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
                       className="w-4 h-4 text-muted-foreground shrink-0 cursor-pointer hover:text-primary transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        openGmailCompose(contact.email!);
+                        openGmailCompose(contact.email!, contact.id);
                       }}
                     />
                   </>
@@ -480,7 +533,7 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
                       className="w-4 h-4 text-muted-foreground shrink-0 cursor-pointer hover:text-primary transition-colors"
                       onClick={(e) => {
                         e.stopPropagation();
-                        window.open(`tel:${contact.mobile_number}`, "_self");
+                        handlePhoneCall(contact.mobile_number!, contact.id);
                       }}
                     />
                   </>
@@ -523,6 +576,28 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
                 <SelectItem value="Completed" className="text-sm">Completed</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+
+          {/* Last Contacted */}
+          <div
+            className="border-r border-border shrink-0"
+            style={{ width: columnWidths.last_contacted }}
+          >
+            <div className="px-3 py-1 min-h-[32px] flex items-center gap-2 text-sm">
+              {contact.last_contacted_at ? (
+                <div className="flex items-center gap-2 w-full">
+                  <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                  <span className="truncate flex-1 text-xs">
+                    {formatLastContacted(contact.last_contacted_at)}
+                  </span>
+                  <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-primary/10 text-primary text-xs font-medium rounded">
+                    {contact.contact_count || 0}
+                  </div>
+                </div>
+              ) : (
+                <span className="text-muted-foreground/50 text-xs">Never</span>
+              )}
+            </div>
           </div>
 
           {/* Notes */}
@@ -588,6 +663,9 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
               <div className="px-3 py-2 border-r border-border font-medium shrink-0" style={{ width: columnWidths.status }}>
                 Status
               </div>
+              <div className="px-3 py-2 border-r border-border font-medium shrink-0" style={{ width: columnWidths.last_contacted }}>
+                Last Contacted
+              </div>
               <div className="px-3 py-2 font-medium flex-1 min-w-[150px]" style={{ minWidth: columnWidths.notes }}>
                 Notes
               </div>
@@ -633,7 +711,7 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
                         <span className="truncate flex-1">{contact.email}</span>
                         <Mail
                           className="w-4 h-4 text-muted-foreground shrink-0 cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => openGmailCompose(contact.email!)}
+                          onClick={() => openGmailCompose(contact.email!, contact.id)}
                         />
                       </>
                     ) : (
@@ -650,7 +728,7 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
                         <span className="truncate flex-1">{contact.mobile_number}</span>
                         <Phone
                           className="w-4 h-4 text-muted-foreground shrink-0 cursor-pointer hover:text-primary transition-colors"
-                          onClick={() => window.open(`tel:${contact.mobile_number}`, "_self")}
+                          onClick={() => handlePhoneCall(contact.mobile_number!, contact.id)}
                         />
                       </>
                     ) : (
@@ -684,6 +762,25 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
                         <SelectItem value="Completed" className="text-sm">Completed</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+
+                {/* Last Contacted */}
+                <div className="border-r border-border shrink-0" style={{ width: columnWidths.last_contacted }}>
+                  <div className="px-3 py-1 min-h-[32px] flex items-center gap-2 text-sm">
+                    {contact.last_contacted_at ? (
+                      <div className="flex items-center gap-2 w-full">
+                        <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                        <span className="truncate flex-1 text-xs">
+                          {formatLastContacted(contact.last_contacted_at)}
+                        </span>
+                        <div className="flex items-center justify-center min-w-[20px] h-5 px-1.5 bg-primary/10 text-primary text-xs font-medium rounded">
+                          {contact.contact_count || 0}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground/50 text-xs">Never</span>
+                    )}
                   </div>
                 </div>
 
