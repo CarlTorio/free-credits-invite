@@ -15,20 +15,20 @@ const HeroSection = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm animate-fade-in">
             <Sparkles className="w-4 h-4" />
-            <span>Your All-in-One Toolkit</span>
+            <span>Data Management Platform</span>
           </div>
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            Manage Your
+            Data & Credit
             <span className="block text-gradient bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
-              Credits & Tools
+              Management Hub
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            A powerful dashboard to track user credits, manage allocations, and streamline your workflow with our suite of tools.
+            Centralize your data operations, track credit allocations, and leverage powerful tools to optimize your business workflows.
           </p>
 
           {/* CTA Buttons */}
@@ -50,9 +50,9 @@ const HeroSection = () => {
               <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
                 <Zap className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-foreground">Fast & Efficient</h3>
+              <h3 className="font-semibold text-foreground">Real-Time Tracking</h3>
               <p className="text-sm text-muted-foreground">
-                Real-time updates and instant credit management at your fingertips.
+                Monitor credit usage and data flows with instant updates and live dashboards.
               </p>
             </div>
 
@@ -60,9 +60,9 @@ const HeroSection = () => {
               <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
                 <Shield className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-foreground">Secure & Reliable</h3>
+              <h3 className="font-semibold text-foreground">Secure Data Storage</h3>
               <p className="text-sm text-muted-foreground">
-                Your data is protected with enterprise-grade security.
+                Enterprise-grade encryption and compliance for all your sensitive data.
               </p>
             </div>
 
@@ -70,9 +70,9 @@ const HeroSection = () => {
               <div className="w-12 h-12 rounded-lg bg-primary/20 flex items-center justify-center">
                 <Sparkles className="w-6 h-6 text-primary" />
               </div>
-              <h3 className="font-semibold text-foreground">Easy to Use</h3>
+              <h3 className="font-semibold text-foreground">Smart Automation</h3>
               <p className="text-sm text-muted-foreground">
-                Intuitive interface designed for seamless user experience.
+                Automate credit allocation and data workflows with intelligent tools.
               </p>
             </div>
           </div>

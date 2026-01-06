@@ -6,22 +6,22 @@ const ToolsSection = () => {
   const tools = [
     {
       icon: CreditCard,
-      title: "Credit Dashboard",
-      description: "Track and manage user credits, monitor allocations, and view usage statistics in real-time.",
+      title: "Credit Manager",
+      description: "Allocate, track, and manage user credits across your organization with real-time usage insights.",
       link: "/dashboard",
       available: true,
     },
     {
       icon: BarChart3,
-      title: "Analytics",
-      description: "Visualize your data with powerful charts and insights to make informed decisions.",
+      title: "Data Analytics",
+      description: "Transform raw data into actionable insights with powerful visualization and reporting tools.",
       link: "#",
       available: false,
     },
     {
       icon: Wrench,
-      title: "More Tools",
-      description: "Additional tools and features coming soon to enhance your workflow.",
+      title: "Data Tools",
+      description: "Import, export, and transform your data with our suite of data management utilities.",
       link: "#",
       available: false,
     },
@@ -32,10 +32,10 @@ const ToolsSection = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-            Our Tools
+            Management Tools
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Powerful tools designed to help you manage and optimize your workflow efficiently.
+            Comprehensive tools for data management, credit tracking, and business intelligence.
           </p>
         </div>
 
