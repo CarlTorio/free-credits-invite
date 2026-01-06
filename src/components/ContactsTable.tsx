@@ -8,8 +8,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, FileText, Trash2, ExternalLink } from "lucide-react";
+import { Plus, FileText, Trash2, ExternalLink, Mail } from "lucide-react";
 import { toast } from "sonner";
+
+interface EmailTemplate {
+  subject: string;
+  body: string;
+}
 
 interface ColumnWidths {
   business_name: number;
@@ -59,6 +64,22 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [columnWidths, setColumnWidths] = useState<ColumnWidths>(DEFAULT_WIDTHS);
   const startWidthRef = useRef<number>(0);
+  const [emailTemplate, setEmailTemplate] = useState<EmailTemplate | null>(null);
+
+  // Fetch email template
+  useEffect(() => {
+    const fetchTemplate = async () => {
+      const { data } = await supabase
+        .from("email_templates")
+        .select("subject, body")
+        .eq("name", "Default")
+        .single();
+      if (data) {
+        setEmailTemplate(data);
+      }
+    };
+    fetchTemplate();
+  }, []);
 
   const handleResizeStart = useCallback(
     (key: keyof ColumnWidths) => (e: React.MouseEvent) => {
@@ -185,6 +206,17 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
       setEditingCell(null);
       setNewRowId(null);
     }
+  };
+
+  const openGmailCompose = (email: string) => {
+    if (!emailTemplate) {
+      toast.error("Email template not loaded");
+      return;
+    }
+    const subject = encodeURIComponent(emailTemplate.subject);
+    const body = encodeURIComponent(emailTemplate.body);
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${subject}&body=${body}`;
+    window.open(gmailUrl, "_blank", "noopener,noreferrer");
   };
 
   const statusColors: Record<string, string> = {
@@ -364,11 +396,31 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
                 className="h-full px-3 py-1 border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary rounded-none text-sm"
               />
             ) : (
-              <div
-                className="cursor-text px-3 py-1 min-h-[32px] flex items-center hover:bg-muted/50 text-sm truncate"
-                onClick={() => startEditing(contact.id, "email", contact.email)}
-              >
-                {contact.email || <span className="text-muted-foreground/50 text-sm">Empty</span>}
+              <div className="px-3 py-1 min-h-[32px] flex items-center gap-2 text-sm">
+                {contact.email ? (
+                  <>
+                    <span
+                      className="cursor-text flex-1 hover:bg-muted/50 rounded px-1 truncate"
+                      onClick={() => startEditing(contact.id, "email", contact.email)}
+                    >
+                      {contact.email}
+                    </span>
+                    <Mail
+                      className="w-4 h-4 text-muted-foreground shrink-0 cursor-pointer hover:text-primary transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openGmailCompose(contact.email!);
+                      }}
+                    />
+                  </>
+                ) : (
+                  <span
+                    className="cursor-text flex-1 hover:bg-muted/50 rounded px-1 text-muted-foreground/50"
+                    onClick={() => startEditing(contact.id, "email", contact.email)}
+                  >
+                    Empty
+                  </span>
+                )}
               </div>
             )}
           </div>
