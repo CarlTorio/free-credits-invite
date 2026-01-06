@@ -1,16 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Select,
   SelectContent,
@@ -18,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Trash2, Save, X } from "lucide-react";
+import { Plus, FileText, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Contact {
@@ -39,29 +29,29 @@ interface ContactsTableProps {
   onAddingChange?: (isAdding: boolean) => void;
 }
 
-const ContactsTable = ({ categoryId, isAdding = false, onAddingChange }: ContactsTableProps) => {
+const ContactsTable = ({ categoryId }: ContactsTableProps) => {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editData, setEditData] = useState<Partial<Contact>>({});
-  const [newContact, setNewContact] = useState({
-    business_name: "",
-    email: "",
-    mobile_number: "",
-    status: "Pending",
-    notes: "",
-  });
+  const [editingCell, setEditingCell] = useState<{ id: string; field: string } | null>(null);
+  const [newRowId, setNewRowId] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchContacts();
   }, [categoryId]);
+
+  useEffect(() => {
+    if (editingCell && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [editingCell]);
 
   const fetchContacts = async () => {
     const { data, error } = await supabase
       .from("contacts")
       .select("*")
       .eq("category_id", categoryId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: true });
 
     if (!error && data) {
       setContacts(data);
@@ -69,80 +59,38 @@ const ContactsTable = ({ categoryId, isAdding = false, onAddingChange }: Contact
     setLoading(false);
   };
 
-  const handleAdd = async () => {
-    if (!newContact.business_name.trim()) {
-      toast.error("Business name is required");
-      return;
-    }
-
+  const handleAddNew = async () => {
     const { data, error } = await supabase
       .from("contacts")
       .insert({
         category_id: categoryId,
-        business_name: newContact.business_name.trim(),
-        email: newContact.email.trim() || null,
-        mobile_number: newContact.mobile_number.trim() || null,
-        status: newContact.status,
-        notes: newContact.notes.trim() || null,
+        business_name: "",
+        status: "Pending",
       })
       .select()
       .single();
 
     if (!error && data) {
-      setContacts([data, ...contacts]);
-      setNewContact({
-        business_name: "",
-        email: "",
-        mobile_number: "",
-        status: "Pending",
-        notes: "",
-      });
-      onAddingChange?.(false);
-      toast.success("Contact added");
+      setContacts([...contacts, data]);
+      setNewRowId(data.id);
+      setEditingCell({ id: data.id, field: "business_name" });
     } else {
       toast.error("Failed to add contact");
     }
   };
 
-  const handleEdit = (contact: Contact) => {
-    setEditingId(contact.id);
-    setEditData({
-      business_name: contact.business_name,
-      email: contact.email || "",
-      mobile_number: contact.mobile_number || "",
-      status: contact.status,
-      notes: contact.notes || "",
-    });
-  };
-
-  const handleSave = async () => {
-    if (!editingId || !editData.business_name?.trim()) {
-      toast.error("Business name is required");
-      return;
-    }
-
+  const handleUpdate = async (id: string, field: string, value: string) => {
     const { error } = await supabase
       .from("contacts")
-      .update({
-        business_name: editData.business_name.trim(),
-        email: editData.email?.trim() || null,
-        mobile_number: editData.mobile_number?.trim() || null,
-        status: editData.status,
-        notes: editData.notes?.trim() || null,
-      })
-      .eq("id", editingId);
+      .update({ [field]: value.trim() || null })
+      .eq("id", id);
 
     if (!error) {
       setContacts(
         contacts.map((c) =>
-          c.id === editingId ? { ...c, ...editData } : c
+          c.id === id ? { ...c, [field]: value.trim() || null } : c
         )
       );
-      setEditingId(null);
-      setEditData({});
-      toast.success("Contact updated");
-    } else {
-      toast.error("Failed to update contact");
     }
   };
 
@@ -157,10 +105,34 @@ const ContactsTable = ({ categoryId, isAdding = false, onAddingChange }: Contact
     }
   };
 
+  const handleBlur = (id: string, field: string, value: string) => {
+    handleUpdate(id, field, value);
+    setEditingCell(null);
+    
+    // Clean up empty new rows
+    if (newRowId === id && !value.trim() && field === "business_name") {
+      const contact = contacts.find(c => c.id === id);
+      if (contact && !contact.business_name && !contact.email && !contact.mobile_number) {
+        handleDelete(id);
+      }
+    }
+    setNewRowId(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent, id: string, field: string, value: string) => {
+    if (e.key === "Enter") {
+      handleBlur(id, field, value);
+    }
+    if (e.key === "Escape") {
+      setEditingCell(null);
+      setNewRowId(null);
+    }
+  };
+
   const statusColors: Record<string, string> = {
-    "Already Called": "bg-green-500/20 text-green-400",
-    Pending: "bg-yellow-500/20 text-yellow-400",
-    Busy: "bg-red-500/20 text-red-400",
+    "Already Called": "text-green-400",
+    Pending: "text-yellow-400",
+    Busy: "text-red-400",
   };
 
   if (loading) {
@@ -172,315 +144,152 @@ const ContactsTable = ({ categoryId, isAdding = false, onAddingChange }: Contact
   }
 
   return (
-    <div className="space-y-4">
-      {/* Table */}
-      <div className="border border-border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead className="w-[200px] border-r border-border">Business Name</TableHead>
-              <TableHead className="w-[200px] border-r border-border">Email</TableHead>
-              <TableHead className="w-[150px] border-r border-border">Mobile Number</TableHead>
-              <TableHead className="w-[140px] border-r border-border">Status</TableHead>
-              <TableHead className="border-r border-border">Notes</TableHead>
-              <TableHead className="w-[100px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {/* Add New Row - show at TOP when table is empty */}
-            {isAdding && contacts.length === 0 && (
-              <TableRow className="bg-primary/5">
-                <TableCell className="border-r border-border">
-                  <Input
-                    placeholder="Business name"
-                    value={newContact.business_name}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, business_name: e.target.value })
-                    }
-                  />
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  <Input
-                    placeholder="Email"
-                    value={newContact.email}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, email: e.target.value })
-                    }
-                  />
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  <Input
-                    placeholder="Mobile"
-                    value={newContact.mobile_number}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, mobile_number: e.target.value })
-                    }
-                  />
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  <Select
-                    value={newContact.status}
-                    onValueChange={(value) =>
-                      setNewContact({ ...newContact, status: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Already Called">Already Called</SelectItem>
-                      <SelectItem value="Busy">Busy</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  <Textarea
-                    placeholder="Notes / Feedback"
-                    value={newContact.notes}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, notes: e.target.value })
-                    }
-                    className="min-h-[60px]"
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={handleAdd}>
-                      <Save className="w-4 h-4 text-green-500" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => onAddingChange?.(false)}
-                    >
-                      <X className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-
-            {/* Existing Contacts */}
-            {contacts.map((contact) => (
-              <TableRow key={contact.id}>
-                <TableCell className="border-r border-border">
-                  {editingId === contact.id ? (
-                    <Input
-                      value={editData.business_name || ""}
-                      onChange={(e) =>
-                        setEditData({ ...editData, business_name: e.target.value })
-                      }
-                    />
-                  ) : (
-                    <span
-                      className="cursor-pointer hover:text-primary"
-                      onClick={() => handleEdit(contact)}
-                    >
-                      {contact.business_name}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  {editingId === contact.id ? (
-                    <Input
-                      value={editData.email || ""}
-                      onChange={(e) =>
-                        setEditData({ ...editData, email: e.target.value })
-                      }
-                    />
-                  ) : (
-                    <span
-                      className="cursor-pointer hover:text-primary"
-                      onClick={() => handleEdit(contact)}
-                    >
-                      {contact.email || "-"}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  {editingId === contact.id ? (
-                    <Input
-                      value={editData.mobile_number || ""}
-                      onChange={(e) =>
-                        setEditData({ ...editData, mobile_number: e.target.value })
-                      }
-                    />
-                  ) : (
-                    <span
-                      className="cursor-pointer hover:text-primary"
-                      onClick={() => handleEdit(contact)}
-                    >
-                      {contact.mobile_number || "-"}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  {editingId === contact.id ? (
-                    <Select
-                      value={editData.status}
-                      onValueChange={(value) =>
-                        setEditData({ ...editData, status: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Already Called">Already Called</SelectItem>
-                        <SelectItem value="Busy">Busy</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <span
-                      className={`px-2 py-1 rounded text-xs font-medium ${
-                        statusColors[contact.status] || ""
-                      }`}
-                    >
-                      {contact.status}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  {editingId === contact.id ? (
-                    <Textarea
-                      value={editData.notes || ""}
-                      onChange={(e) =>
-                        setEditData({ ...editData, notes: e.target.value })
-                      }
-                      className="min-h-[60px]"
-                    />
-                  ) : (
-                    <span
-                      className="cursor-pointer hover:text-primary text-sm"
-                      onClick={() => handleEdit(contact)}
-                    >
-                      {contact.notes || "-"}
-                    </span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  {editingId === contact.id ? (
-                    <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={handleSave}>
-                        <Save className="w-4 h-4 text-green-500" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        onClick={() => {
-                          setEditingId(null);
-                          setEditData({});
-                        }}
-                      >
-                        <X className="w-4 h-4 text-destructive" />
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleDelete(contact.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))}
-
-            {/* Add New Row - show at BOTTOM when table has contacts */}
-            {isAdding && contacts.length > 0 && (
-              <TableRow className="bg-primary/5">
-                <TableCell className="border-r border-border">
-                  <Input
-                    placeholder="Business name"
-                    value={newContact.business_name}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, business_name: e.target.value })
-                    }
-                  />
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  <Input
-                    placeholder="Email"
-                    value={newContact.email}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, email: e.target.value })
-                    }
-                  />
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  <Input
-                    placeholder="Mobile"
-                    value={newContact.mobile_number}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, mobile_number: e.target.value })
-                    }
-                  />
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  <Select
-                    value={newContact.status}
-                    onValueChange={(value) =>
-                      setNewContact({ ...newContact, status: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Already Called">Already Called</SelectItem>
-                      <SelectItem value="Busy">Busy</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </TableCell>
-                <TableCell className="border-r border-border">
-                  <Textarea
-                    placeholder="Notes / Feedback"
-                    value={newContact.notes}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, notes: e.target.value })
-                    }
-                    className="min-h-[60px]"
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={handleAdd}>
-                      <Save className="w-4 h-4 text-green-500" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => onAddingChange?.(false)}
-                    >
-                      <X className="w-4 h-4 text-destructive" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-
-            {/* Always show add button row */}
-            {!isAdding && (
-              <TableRow>
-                <TableCell colSpan={6} className="text-center py-6">
-                  <Button
-                    size="icon"
-                    onClick={() => onAddingChange?.(true)}
-                    className="rounded-full w-10 h-10 mx-auto"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </Button>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+    <div className="w-full">
+      {/* Header */}
+      <div className="flex border-b border-border text-sm text-muted-foreground">
+        <div className="flex-1 min-w-[200px] px-3 py-2 border-r border-border font-medium">
+          Business Name
+        </div>
+        <div className="flex-1 min-w-[180px] px-3 py-2 border-r border-border font-medium">
+          Email
+        </div>
+        <div className="flex-1 min-w-[140px] px-3 py-2 border-r border-border font-medium">
+          Mobile
+        </div>
+        <div className="w-[120px] px-3 py-2 border-r border-border font-medium">
+          Status
+        </div>
+        <div className="flex-1 min-w-[200px] px-3 py-2 font-medium">
+          Notes
+        </div>
       </div>
+
+      {/* Rows */}
+      {contacts.map((contact) => (
+        <div
+          key={contact.id}
+          className="flex border-b border-border hover:bg-muted/30 group"
+        >
+          {/* Business Name */}
+          <div className="flex-1 min-w-[200px] border-r border-border">
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+              {editingCell?.id === contact.id && editingCell?.field === "business_name" ? (
+                <Input
+                  ref={inputRef}
+                  defaultValue={contact.business_name || ""}
+                  onBlur={(e) => handleBlur(contact.id, "business_name", e.target.value)}
+                  onKeyDown={(e) => handleKeyDown(e, contact.id, "business_name", e.currentTarget.value)}
+                  className="h-7 px-1 py-0 border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary"
+                />
+              ) : (
+                <span
+                  className="cursor-text flex-1 min-h-[28px] flex items-center hover:bg-muted/50 rounded px-1"
+                  onClick={() => setEditingCell({ id: contact.id, field: "business_name" })}
+                >
+                  {contact.business_name || <span className="text-muted-foreground/50">Empty</span>}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Email */}
+          <div className="flex-1 min-w-[180px] border-r border-border">
+            {editingCell?.id === contact.id && editingCell?.field === "email" ? (
+              <Input
+                ref={inputRef}
+                defaultValue={contact.email || ""}
+                onBlur={(e) => handleBlur(contact.id, "email", e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, contact.id, "email", e.currentTarget.value)}
+                className="h-full px-3 py-1.5 border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary rounded-none"
+              />
+            ) : (
+              <div
+                className="cursor-text px-3 py-1.5 min-h-[36px] flex items-center hover:bg-muted/50"
+                onClick={() => setEditingCell({ id: contact.id, field: "email" })}
+              >
+                {contact.email || <span className="text-muted-foreground/50">Empty</span>}
+              </div>
+            )}
+          </div>
+
+          {/* Mobile */}
+          <div className="flex-1 min-w-[140px] border-r border-border">
+            {editingCell?.id === contact.id && editingCell?.field === "mobile_number" ? (
+              <Input
+                ref={inputRef}
+                defaultValue={contact.mobile_number || ""}
+                onBlur={(e) => handleBlur(contact.id, "mobile_number", e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, contact.id, "mobile_number", e.currentTarget.value)}
+                className="h-full px-3 py-1.5 border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary rounded-none"
+              />
+            ) : (
+              <div
+                className="cursor-text px-3 py-1.5 min-h-[36px] flex items-center hover:bg-muted/50"
+                onClick={() => setEditingCell({ id: contact.id, field: "mobile_number" })}
+              >
+                {contact.mobile_number || <span className="text-muted-foreground/50">Empty</span>}
+              </div>
+            )}
+          </div>
+
+          {/* Status */}
+          <div className="w-[120px] border-r border-border">
+            <Select
+              value={contact.status}
+              onValueChange={(value) => handleUpdate(contact.id, "status", value)}
+            >
+              <SelectTrigger className="h-full border-0 rounded-none focus:ring-1 focus:ring-primary">
+                <SelectValue>
+                  <span className={statusColors[contact.status] || ""}>
+                    {contact.status}
+                  </span>
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Pending">Pending</SelectItem>
+                <SelectItem value="Already Called">Already Called</SelectItem>
+                <SelectItem value="Busy">Busy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Notes */}
+          <div className="flex-1 min-w-[200px] flex items-center">
+            {editingCell?.id === contact.id && editingCell?.field === "notes" ? (
+              <Input
+                ref={inputRef}
+                defaultValue={contact.notes || ""}
+                onBlur={(e) => handleBlur(contact.id, "notes", e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, contact.id, "notes", e.currentTarget.value)}
+                className="h-full px-3 py-1.5 border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary rounded-none"
+              />
+            ) : (
+              <div
+                className="cursor-text px-3 py-1.5 min-h-[36px] flex items-center flex-1 hover:bg-muted/50"
+                onClick={() => setEditingCell({ id: contact.id, field: "notes" })}
+              >
+                {contact.notes || <span className="text-muted-foreground/50">Empty</span>}
+              </div>
+            )}
+            <button
+              onClick={() => handleDelete(contact.id)}
+              className="opacity-0 group-hover:opacity-100 p-2 hover:bg-destructive/10 rounded transition-opacity"
+            >
+              <Trash2 className="w-4 h-4 text-destructive" />
+            </button>
+          </div>
+        </div>
+      ))}
+
+      {/* Add New Row Button */}
+      <button
+        onClick={handleAddNew}
+        className="flex items-center gap-2 w-full px-3 py-2 text-muted-foreground hover:bg-muted/30 hover:text-foreground transition-colors text-sm"
+      >
+        <Plus className="w-4 h-4" />
+        <span>New</span>
+      </button>
     </div>
   );
 };
