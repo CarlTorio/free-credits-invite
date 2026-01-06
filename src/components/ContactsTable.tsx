@@ -583,7 +583,11 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
             className="border-r border-border shrink-0"
             style={{ width: columnWidths.last_contacted }}
           >
-            <div className="px-3 py-1 min-h-[32px] flex items-center gap-2 text-sm">
+            <div 
+              className="px-3 py-1 min-h-[32px] flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded"
+              onClick={() => trackContact(contact.id)}
+              title="Click to log contact"
+            >
               {contact.last_contacted_at ? (
                 <div className="flex items-center gap-2 w-full">
                   <Clock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
