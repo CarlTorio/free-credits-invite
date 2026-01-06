@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, ArrowLeft, Trash2 } from "lucide-react";
 import ContactsTable from "@/components/ContactsTable";
+import EmailTemplateDialog from "@/components/EmailTemplateDialog";
 
 interface Category {
   id: string;
@@ -66,17 +67,19 @@ const CRM = () => {
     return (
       <div className="min-h-screen bg-background pt-20 px-4">
         <div className="max-w-7xl mx-auto">
-          <Button
-            variant="ghost"
-            onClick={() => {
-              setSelectedCategory(null);
-              setIsAddingContact(false);
-            }}
-            className="mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Categories
-          </Button>
+          <div className="flex items-center justify-between mb-4">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSelectedCategory(null);
+                setIsAddingContact(false);
+              }}
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Back to Categories
+            </Button>
+            <EmailTemplateDialog />
+          </div>
           <h1 className="text-3xl font-bold text-foreground mb-6">
             {selectedCategory.name}
           </h1>
