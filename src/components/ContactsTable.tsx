@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, FileText, Trash2, ExternalLink, Mail } from "lucide-react";
+import { Plus, FileText, Trash2, ExternalLink, Mail, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 interface EmailTemplate {
@@ -440,11 +440,31 @@ const ContactsTable = ({ categoryId }: ContactsTableProps) => {
                 className="h-full px-3 py-1 border-0 bg-transparent focus-visible:ring-1 focus-visible:ring-primary rounded-none text-sm"
               />
             ) : (
-              <div
-                className="cursor-text px-3 py-1 min-h-[32px] flex items-center hover:bg-muted/50 text-sm truncate"
-                onClick={() => startEditing(contact.id, "mobile_number", contact.mobile_number)}
-              >
-                {contact.mobile_number || <span className="text-muted-foreground/50 text-sm">Empty</span>}
+              <div className="px-3 py-1 min-h-[32px] flex items-center gap-2 text-sm">
+                {contact.mobile_number ? (
+                  <>
+                    <span
+                      className="cursor-text flex-1 hover:bg-muted/50 rounded px-1 truncate"
+                      onClick={() => startEditing(contact.id, "mobile_number", contact.mobile_number)}
+                    >
+                      {contact.mobile_number}
+                    </span>
+                    <Phone
+                      className="w-4 h-4 text-muted-foreground shrink-0 cursor-pointer hover:text-primary transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        window.open(`tel:${contact.mobile_number}`, "_self");
+                      }}
+                    />
+                  </>
+                ) : (
+                  <span
+                    className="cursor-text flex-1 hover:bg-muted/50 rounded px-1 text-muted-foreground/50"
+                    onClick={() => startEditing(contact.id, "mobile_number", contact.mobile_number)}
+                  >
+                    Empty
+                  </span>
+                )}
               </div>
             )}
           </div>
