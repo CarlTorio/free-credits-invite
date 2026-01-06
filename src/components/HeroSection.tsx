@@ -15,20 +15,20 @@ const HeroSection = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm animate-fade-in">
             <Sparkles className="w-4 h-4" />
-            <span>Data Management Platform</span>
+            <span>Internal Team Portal</span>
           </div>
 
           {/* Main Heading */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-foreground animate-fade-in" style={{ animationDelay: "0.1s" }}>
-            Data & Credit
+            Team Data &
             <span className="block text-gradient bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent">
-              Management Hub
+              Credit Hub
             </span>
           </h1>
 
           {/* Subtitle */}
           <p className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto animate-fade-in" style={{ animationDelay: "0.2s" }}>
-            Centralize your data operations, track credit allocations, and leverage powerful tools to optimize your business workflows.
+            Private workspace for our team to manage data, track credits, and access internal tools.
           </p>
 
           {/* CTA Buttons */}
