@@ -178,19 +178,7 @@ const ContactsTable = ({ categoryId, isAdding = false, onAddingChange }: Contact
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50">
-              <TableHead className="w-[200px]">
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="icon"
-                    onClick={() => onAddingChange?.(true)}
-                    disabled={isAdding}
-                    className="rounded-full w-8 h-8"
-                  >
-                    <Plus className="w-4 h-4" />
-                  </Button>
-                  Business Name
-                </div>
-              </TableHead>
+              <TableHead className="w-[200px]">Business Name</TableHead>
               <TableHead className="w-[200px]">Email</TableHead>
               <TableHead className="w-[150px]">Mobile Number</TableHead>
               <TableHead className="w-[140px]">Status</TableHead>
@@ -404,8 +392,17 @@ const ContactsTable = ({ categoryId, isAdding = false, onAddingChange }: Contact
 
             {contacts.length === 0 && !isAdding && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                  No contacts yet. Click "Add Contact" to get started.
+                <TableCell colSpan={6} className="text-center py-12">
+                  <Button
+                    size="icon"
+                    onClick={() => onAddingChange?.(true)}
+                    className="rounded-full w-12 h-12 mx-auto"
+                  >
+                    <Plus className="w-6 h-6" />
+                  </Button>
+                  <p className="text-muted-foreground mt-4">
+                    No contacts yet. Click to add one.
+                  </p>
                 </TableCell>
               </TableRow>
             )}
