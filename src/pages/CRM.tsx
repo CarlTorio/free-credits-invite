@@ -96,15 +96,15 @@ const CRM = () => {
   return (
     <div className="min-h-screen bg-background pt-20 px-4">
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <Link to="/" className="text-muted-foreground hover:text-foreground text-sm mb-2 inline-block">
-              ← Back to Home
-            </Link>
-            <h1 className="text-3xl font-bold text-foreground text-center">
+        <div className="mb-8">
+          <Link to="/" className="text-muted-foreground hover:text-foreground text-sm mb-2 inline-block">
+            ← Back to Home
+          </Link>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-foreground">
               Contact Management
             </h1>
-            <p className="text-muted-foreground mt-2 text-center">
+            <p className="text-muted-foreground mt-2">
               Select a category or create a new one to manage your contacts
             </p>
           </div>
