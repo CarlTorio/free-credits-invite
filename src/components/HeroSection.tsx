@@ -44,7 +44,7 @@ const HeroSection = () => {
               </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="border-white/20 hover:bg-white/5">
-              <a href="#tools">Compensation Portal </a>
+              <Link to="/compensation">Compensation Portal</Link>
             </Button>
           </div>
         </div>
