@@ -35,7 +35,7 @@ const HeroSection = () => {
           }}>
             <Button asChild size="lg" className="glow-effect group">
               <Link to="/dashboard">
-                Go to Dashboard
+                Credits Dashboard
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
