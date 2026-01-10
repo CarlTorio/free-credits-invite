@@ -31,19 +31,19 @@ const HeroSection = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in" style={{
           animationDelay: "0.3s"
         }}>
-            <Button asChild size="lg" className="glow-effect group min-w-[200px]">
+            <Button asChild size="lg" className="glow-effect group w-[220px] justify-center">
               <Link to="/dashboard">
                 Go to Dashboard
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
-            <Button asChild size="lg" variant="secondary" className="group min-w-[200px]">
+            <Button asChild size="lg" variant="secondary" className="group w-[220px] justify-center">
               <Link to="/crm">
                 Manage Contacts
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Link>
             </Button>
-            <Button asChild size="lg" className="glow-effect group min-w-[200px]">
+            <Button asChild size="lg" className="glow-effect group w-[220px] justify-center">
               <Link to="/compensation">
                 Compensation Portal
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
